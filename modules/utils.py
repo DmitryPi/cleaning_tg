@@ -9,6 +9,9 @@ def build_config(config_name='config.ini') -> None:
         'MAIN': {
             'debug': True,
         },
+        'TELEGRAM': {
+            'api_token': "",
+        },
     })
     with open(config_name, 'w') as f:
         print('- Creating new config')
