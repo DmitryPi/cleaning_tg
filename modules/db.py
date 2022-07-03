@@ -1,12 +1,24 @@
 import logging
 import sqlite3
 
+from .users import User
 from .utils import load_config, handle_error
 
 
 class Database:
     def __init__(self, config=''):
         self.config = config if config else load_config()
+        self.sql_create_users_table = """
+            CREATE TABLE IF NOT EXISTS users (
+                uid integer PRIMARY KEY,
+                username text NOT NULL,
+                first_name text NOT NULL,
+                fullname text NOT NULL,
+                phone_num int NOT NULL,
+                role text NOT NULL,
+                created text NOT NULL,
+                updated text NOT NULL
+            );"""
 
     def create_connection(self, db_file='db.sqlite3'):
         """Connect to db/Create `db.sqlite3` in root folder if not exist"""
@@ -56,6 +68,10 @@ class Database:
             conn.commit()
         except Exception as e:
             handle_error(e)
+
+    def get_user(self, conn, user_id) -> User:
+        user = self.get_objects_filter_by_value(conn, 'users', 'uid', user_id)[0]
+        return User(*user)
 
     def get_objects_all(self, conn, table: str) -> list:
         """Return queryset of table objects"""

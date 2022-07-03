@@ -28,6 +28,7 @@ class TelegramBot:
         self.users = load_json('assets/users.json')
 
     async def command_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Инициировать аутентификацию пользователя"""
         msg = [
             'Введите номер телефона',
             'Формат телефона c +7',
@@ -37,13 +38,14 @@ class TelegramBot:
         return 1
 
     async def verif_phone(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        '''Принять и проверить номер телефона пользователя'''
+        """Принять и проверить номер телефона пользователя"""
         phone = ''.join(re.findall(r'\d+', update.message.text))
         phone_len = len(phone)
         num_limit = 11
         # Проверка длины номера / поиск в пользователях
         if phone_len == num_limit:
             try:
+                user_tg = update.effective_user
                 user = [user for user in self.users if user['phone_num'] == int(phone)][0]
                 msg = [
                     f'Здравствуйте, {user["full_name"]}',
@@ -61,11 +63,11 @@ class TelegramBot:
         return 1
 
     async def command_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''Помошник для вывода команд'''
+        """Помошник для вывода команд"""
         pass
 
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''Изменение роли пользователя'''
+        """Изменение роли пользователя"""
         pass
 
     async def conv_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -75,7 +77,7 @@ class TelegramBot:
         return ConversationHandler.END
 
     def run(self):
-        '''Запустить бота'''
+        """Запустить бота"""
         print(f'- {__class__.__name__} started')
         # Create the Application and pass it your bot's token.
         application = Application.builder().token(self.api_token).build()

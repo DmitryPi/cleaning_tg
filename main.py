@@ -16,6 +16,7 @@ if __name__ == '__main__':
     # Database init
     db = Database()
     db_conn = db.create_connection()
+    db.create_table(db_conn, sql=db.sql_create_users_table)
 
     telegram_bot = TelegramBot(config['TELEGRAM']['api_token'])
     telegram_bot.run()
