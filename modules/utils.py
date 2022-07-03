@@ -1,5 +1,6 @@
 import configparser
 import codecs
+import json
 
 
 def build_config(config_name='config.ini') -> None:
@@ -37,3 +38,9 @@ def handle_error(error, to_file=False, to_file_path='error_log.txt'):
             f.write(error + '\n')
     else:
         raise error
+
+
+def load_json(file_path: str) -> list[dict]:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        return data

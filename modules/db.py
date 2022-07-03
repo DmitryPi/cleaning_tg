@@ -5,8 +5,8 @@ from .utils import load_config, handle_error
 
 
 class Database:
-    def __init__(self):
-        self.config = load_config()
+    def __init__(self, config=''):
+        self.config = config if config else load_config()
 
     def create_connection(self, db_file='db.sqlite3'):
         """Connect to db/Create `db.sqlite3` in root folder if not exist"""
