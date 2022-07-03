@@ -17,7 +17,7 @@ class TestUsers(TestCase):
 
     def test_build_user(self):
         local_user = self.users[0]
-        user = build_user(self.users[0], self.user_tg)
+        user = build_user(local_user, self.user_tg)
         assert user.uid == self.user_tg['id']
         assert user.username == self.user_tg['username']
         assert user.first_name == self.user_tg['first_name']

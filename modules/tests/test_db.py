@@ -4,6 +4,8 @@ from unittest import TestCase
 from pathlib import Path
 
 from ..db import Database
+from ..users import User, build_user
+from ..utils import load_json
 
 
 test_db = 'testdb.sqlite3'
@@ -26,9 +28,27 @@ class TestDatabase(TestCase):
                 test_bool boolean NOT NULL,
                 test_text text NOT NULL
             );""".format(self.db_table)
+        # create users table
+        self.db.create_table(self.db_conn, self.db.sql_create_users_table)
+        self.users = load_json('assets/users.json')
+        self.user_tg = {
+            'is_bot': False,
+            'username': 'DmitrydevPy',
+            'first_name': 'Dmitry',
+            'id': 5156307333,
+            'language_code': 'ru'
+        }
 
     def tearDown(self):
         self.db_conn.close()
+
+    def test_insert_get_user(self):
+        user = build_user(self.users[0], self.user_tg)
+        self.db.insert_user(self.db_conn, user)
+        user = self.db.get_user(self.db_conn, self.user_tg['id'])
+        assert isinstance(user, User)
+        assert len(list(user.__dict__.keys())) == 8
+        assert len(list(user.__dict__.values())) == 8
 
     def insert_test_objects(self):
         test_fields = ('test_bool', 'test_text')
