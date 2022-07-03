@@ -1,10 +1,12 @@
 import re
 
 from .db import Database
-from .users import build_user
+from .users import UserRole, build_user
 from .utils import load_config, load_json
 
 from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
@@ -82,7 +84,53 @@ class TelegramBot:
 
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Изменение роли пользователя"""
-        pass
+        try:
+            user = self.db.get_user(self.db_conn, update.effective_user.id)
+            role_btns = [
+                InlineKeyboardButton(role.value, callback_data=role.value) for role in UserRole]
+            reply_keyboard = [role_btns]
+            reply_markup = InlineKeyboardMarkup(reply_keyboard)
+            msg = 'Выберите роль:'
+            await update.message.reply_text(msg, reply_markup=reply_markup)
+            return 1
+        except IndexError:
+            msg = 'Вам нет в базе данных.\nИспользуйте команду - /start'
+            await update.message.reply_text(msg)
+            return ConversationHandler.END
+
+    async def role_change(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Изменение роли без пароля"""
+        query = update.callback_query
+        await query.answer()
+        user_id = update.effective_user.id
+        new_role = query.data
+        if new_role == UserRole.MANAGER.value:
+            context.user_data.update({'role_change': new_role})
+            msg = 'Введите пароль:'
+            await query.edit_message_text(text=msg)
+            return 2
+        else:
+            msg = f'Ваша роль изменена на [{query.data}]'
+            await query.edit_message_text(text=msg)
+            self.db.update_object(
+                self.db_conn, 'users', 'role', 'uid', (new_role, user_id))
+            return ConversationHandler.END
+
+    async def role_change_password(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Изменение роли с введением пароля"""
+        password = update.message.text
+        if password == self.config['TELEGRAM']['manager_password']:
+            user_id = update.effective_user.id
+            new_role = context.user_data['role_change']
+            self.db.update_object(
+                self.db_conn, 'users', 'role', 'uid', (new_role, user_id))
+            msg = f'Ваша роль изменена на [{new_role}]'
+            await update.message.reply_text(msg)
+            return ConversationHandler.END
+        else:
+            msg = 'Введите пароль:\n/cancel - для отмены операции'
+            await update.message.reply_text(msg)
+            return 2
 
     async def conv_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Cancels and ends the conversation."""
@@ -96,16 +144,25 @@ class TelegramBot:
         # Create the Application and pass it your bot's token.
         application = Application.builder().token(self.api_token).build()
         # start conversation
-        start_conv = ConversationHandler(
+        start_conv_handler = ConversationHandler(
             entry_points=[CommandHandler('start', self.command_start)],
             states={
                 1: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.verif_phone)]
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
         )
+        # role change conversation
+        role_conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('role', self.command_role)],
+            states={
+                1: [CallbackQueryHandler(self.role_change)],
+                2: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.role_change_password)]
+            },
+            fallbacks=[CommandHandler('cancel', self.conv_cancel)],
+        )
         # on different commands - answer in Telegram
-        application.add_handler(start_conv)
+        application.add_handler(start_conv_handler)
         application.add_handler(CommandHandler('help', self.command_help))
-        application.add_handler(CommandHandler('role', self.command_role))
+        application.add_handler(role_conv_handler)
         # Run the bot until the user presses Ctrl-C
         application.run_polling()
