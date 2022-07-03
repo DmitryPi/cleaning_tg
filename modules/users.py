@@ -20,7 +20,7 @@ class User:
     updated: str
 
 
-def build_user(user_data, tg_data: dict) -> User
+def build_user(user_data, tg_data: dict) -> User:
     """user_data - из json файла; tg_data - объект телеграм пользователя"""
     now = str(datetime.now())
     user = User(

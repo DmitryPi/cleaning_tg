@@ -46,6 +46,7 @@ class TelegramBot:
         if phone_len == num_limit:
             try:
                 user_tg = update.effective_user
+                print(user_tg)
                 user = [user for user in self.users if user['phone_num'] == int(phone)][0]
                 msg = [
                     f'Здравствуйте, {user["full_name"]}',
