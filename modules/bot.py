@@ -35,10 +35,7 @@ class TelegramBot:
         user_id = update.effective_user.id
         try:
             user = self.db.get_user(self.db_conn, user_id)
-            msg = [
-                f'Здравствуйте, {user.full_name}',
-            ]
-            msg = '\n'.join(msg)
+            msg = f'Здравствуйте, {user.full_name}'
             await update.message.reply_text(msg)
             return ConversationHandler.END
         except IndexError:
@@ -59,10 +56,7 @@ class TelegramBot:
         if phone_len == num_limit:
             try:
                 user = [user for user in self.users if user['phone_num'] == int(phone)][0]
-                msg = [
-                    f'Здравствуйте, {user["full_name"]}',
-                ]
-                msg = '\n'.join(msg)
+                msg = f'Здравствуйте, {user["full_name"]}'
                 await update.message.reply_text(msg)
                 # insert user to db
                 user = build_user(user, update.effective_user)
@@ -80,6 +74,10 @@ class TelegramBot:
 
     async def command_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Помошник для вывода команд"""
+        pass
+
+    async def command_upload(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Загрузить обновленных пользователей"""
         pass
 
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
