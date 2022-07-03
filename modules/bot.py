@@ -1,6 +1,7 @@
 import re
 
 from .db import Database
+from .users import build_user
 from .utils import load_config, load_json
 
 from telegram import (
@@ -29,13 +30,23 @@ class TelegramBot:
 
     async def command_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Инициировать аутентификацию пользователя"""
-        msg = [
-            'Введите номер телефона',
-            'Формат телефона c +7',
-        ]
-        msg = '\n'.join(msg)
-        await update.message.reply_text(msg)
-        return 1
+        user_id = update.effective_user.id
+        try:
+            user = self.db.get_user(self.db_conn, user_id)
+            msg = [
+                f'Здравствуйте, {user.full_name}',
+            ]
+            msg = '\n'.join(msg)
+            await update.message.reply_text(msg)
+            return ConversationHandler.END
+        except IndexError:
+            msg = [
+                'Введите номер телефона',
+                'Формат телефона c +7',
+            ]
+            msg = '\n'.join(msg)
+            await update.message.reply_text(msg)
+            return 1
 
     async def verif_phone(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Принять и проверить номер телефона пользователя"""
@@ -45,14 +56,16 @@ class TelegramBot:
         # Проверка длины номера / поиск в пользователях
         if phone_len == num_limit:
             try:
-                user_tg = update.effective_user
-                print(user_tg)
                 user = [user for user in self.users if user['phone_num'] == int(phone)][0]
                 msg = [
                     f'Здравствуйте, {user["full_name"]}',
                 ]
                 msg = '\n'.join(msg)
                 await update.message.reply_text(msg)
+                # insert user to db
+                user = build_user(user, update.effective_user)
+                self.db.insert_user(self.db_conn, user)
+                # end conversation
                 return ConversationHandler.END
             except IndexError:
                 msg = f'Ваш номер [{phone}] не найден в базе данных'

@@ -13,7 +13,7 @@ class Database:
                 uid integer PRIMARY KEY,
                 username text NOT NULL,
                 first_name text NOT NULL,
-                fullname text NOT NULL,
+                full_name text NOT NULL,
                 phone_num int NOT NULL,
                 role text NOT NULL,
                 created text NOT NULL,
@@ -68,6 +68,12 @@ class Database:
             conn.commit()
         except Exception as e:
             handle_error(e)
+
+    def insert_user(self, conn, user: User) -> None:
+        """Insert user into users from User keys/values"""
+        keys = tuple(user.__dict__.keys())
+        values = tuple(user.__dict__.values())
+        self.insert_object(conn, 'users', keys, values)
 
     def get_user(self, conn, user_id) -> User:
         user = self.get_objects_filter_by_value(conn, 'users', 'uid', user_id)[0]
