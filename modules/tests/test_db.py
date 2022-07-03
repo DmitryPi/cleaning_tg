@@ -43,8 +43,6 @@ class TestDatabase(TestCase):
     def test_db_create_table(self):
         created = self.db.create_table(self.db_conn, sql=self.sql_test_table)
         self.assertTrue(created)
-        created = self.db.create_table(self.db_conn)
-        self.assertTrue(created)
 
     def test_insert_object_get_objects_all(self):
         self.insert_test_objects()

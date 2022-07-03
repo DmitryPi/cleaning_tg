@@ -18,12 +18,11 @@ class Database:
             handle_error(e)
         return conn
 
-    def create_table(self, conn, sql=''):
+    def create_table(self, conn, sql):
         """Create project table from `self.sql_create_project_table`
            Optional `sql` kwarg if you want to create new table
         """
         try:
-            sql = sql if sql else self.sql_create_project_table
             cur = conn.cursor()
             cur.execute(sql)
             return True
