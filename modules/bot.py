@@ -11,6 +11,7 @@ from telegram import (
     ReplyKeyboardRemove,
     Update,
 )
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -29,6 +30,10 @@ class TelegramBot:
         self.db = Database()
         self.db_conn = self.db.create_connection()
         self.users = load_json('assets/users.json')
+
+    @property
+    def auth_invalid_msg(self) -> str:
+        return 'Пройдите аутентификацию.\nИспользуйте команду - /start'
 
     async def command_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Инициировать аутентификацию пользователя"""
@@ -74,16 +79,32 @@ class TelegramBot:
 
     async def command_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Помошник для вывода команд"""
-        pass
+        try:
+            user = self.db.get_user(self.db_conn, update.effective_user.id)
+            msg = [
+                '<b>Доступные команды:</b>',
+                '/start - Аутентификацию по номеру телефона',
+                '/help - Вызвать помошник команд',
+                '/review - Оставить отзыв',
+            ]
+            if user.role == UserRole.MANAGER.value:
+                msg.append('/upload - Загрузить таблицу пользователей')
+            msg = '\n'.join(msg)
+            await update.message.reply_text(msg)
+        except IndexError:
+            await update.message.reply_text(self.auth_invalid_msg, parse_mode=ParseMode.HTML)
 
     async def command_upload(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Загрузить обновленных пользователей"""
         pass
 
+    async def command_review(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        pass
+
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Изменение роли пользователя"""
         try:
-            user = self.db.get_user(self.db_conn, update.effective_user.id)
+            self.db.get_user(self.db_conn, update.effective_user.id)  # validate user
             role_btns = [
                 InlineKeyboardButton(role.value, callback_data=role.value) for role in UserRole]
             reply_keyboard = [role_btns]
@@ -92,8 +113,7 @@ class TelegramBot:
             await update.message.reply_text(msg, reply_markup=reply_markup)
             return 1
         except IndexError:
-            msg = 'Вам нет в базе данных.\nИспользуйте команду - /start'
-            await update.message.reply_text(msg)
+            await update.message.reply_text(self.auth_invalid_msg)
             return ConversationHandler.END
 
     async def role_change(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
