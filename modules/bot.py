@@ -111,6 +111,7 @@ class TelegramBot:
             return ConversationHandler.END
 
     async def upload_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Проверка типа файла и его обновление"""
         try:
             new_users = update.message.document
             new_users_path = 'assets/users.json'
@@ -127,10 +128,46 @@ class TelegramBot:
             await update.message.reply_text(msg)
             return 1
 
-    async def command_review(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        pass
+    async def command_review(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Создать клавиатуру для оценки 1-10"""
+        try:
+            self.db.get_user(self.db_conn, update.effective_user.id)
+            msg = 'Оцените качество услуги:'
+            score_btns = [
+                [InlineKeyboardButton(i, callback_data=i) for i in range(1, 6)],
+                [InlineKeyboardButton(i, callback_data=i) for i in range(6, 11)]
+            ]
+            reply_keyboard = [score_btns[0], score_btns[1]]
+            reply_markup = InlineKeyboardMarkup(reply_keyboard)
+            await update.message.reply_text(msg, reply_markup=reply_markup)
+            return 1
+        except IndexError:
+            await update.message.reply_text(self.auth_invalid_msg)
+            return ConversationHandler.END
 
-    async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def review_score(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Обработка ответа оценки"""
+        query = update.callback_query
+        await query.answer()
+        context.user_data.update({'review_score': query.data})
+        msg = 'Напишите отзыв:\nПропустить - /skip'
+        await query.edit_message_text(text=msg)
+        return 2
+
+    async def review_comment(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Принятие комментария пользователя и завершения диалога"""
+        score = context.user_data["review_score"]
+        comment = update.message.text.replace('/', '')
+        msg = [
+            'Спасибо за оставленный отзыв',
+            f'Ваша оценка: {score}',
+            f'Ваш комментарий: {comment}',
+        ]
+        msg = '\n'.join(msg)
+        await update.message.reply_text(msg)
+        return ConversationHandler.END
+
+    async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Изменение роли пользователя"""
         try:
             self.db.get_user(self.db_conn, update.effective_user.id)  # validate user
@@ -215,10 +252,20 @@ class TelegramBot:
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
         )
+        # review conversation
+        review_conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('review', self.command_review)],
+            states={
+                1: [CallbackQueryHandler(self.review_score)],
+                2: [MessageHandler(filters.TEXT, self.review_comment)],
+            },
+            fallbacks=[CommandHandler('cancel', self.conv_cancel)],
+        )
         # on different commands - answer in Telegram
         application.add_handler(start_conv_handler)
         application.add_handler(CommandHandler('help', self.command_help))
         application.add_handler(role_conv_handler)
         application.add_handler(upload_conv_handler)
+        application.add_handler(review_conv_handler)
         # Run the bot until the user presses Ctrl-C
         application.run_polling()
