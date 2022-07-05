@@ -38,7 +38,7 @@ class TelegramBot:
 
     @property
     def auth_invalid_msg(self) -> str:
-        return 'Пройдите аутентификацию.\nИспользуйте команду - /start'
+        return 'Пройдите идентификацию.\nИспользуйте команду - /start'
 
     async def raw_send_message(self, chat_id, msg):
         """Raw api send_message: asyncio.run(raw_send_message())"""
@@ -55,7 +55,7 @@ class TelegramBot:
             return ConversationHandler.END
         except IndexError:
             msg = [
-                'Введите номер телефона',
+                'Введите номер телефона для идентификации',
                 'Формат телефона c 8',
             ]
             msg = '\n'.join(msg)
@@ -178,25 +178,26 @@ class TelegramBot:
 
     async def review_comment(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Принятие комментария пользователя и завершения диалога"""
+        managers = self.db.get_managers(self.db_conn)
         user = context.user_data['user']
         score = context.user_data['review_score']
-        comment = update.message.text.replace('/', '')
+        comment = update.message.text.replace('/skip', '')
         msg = 'Спасибо за оставленный отзыв!'
         review_msg = [
             '<b>Отзыв пользователя:</b>',
             f'<b>ID:</b> {user.uid}',
-            f'<b>Username:</b> {user.username}',
             f'<b>ФИО:</b> {user.full_name}',
-            f'<b>Телефон:</b> {user.phone_num}',
+            f'<b>Номер телефон:</b> {user.phone_num}',
             f'<b>Оценка:</b> {score}',
             f'<b>Комментарий:</b> {comment}',
         ]
         await update.message.reply_text(msg)
-        await context.bot.send_message(
-            chat_id=self.config['TELEGRAM']['admin_id'],
-            text='\n'.join(review_msg),
-            parse_mode=ParseMode.HTML,
-        )
+        for manager in managers:
+            await context.bot.send_message(
+                chat_id=manager.uid,
+                text='\n'.join(review_msg),
+                parse_mode=ParseMode.HTML,
+            )
         return ConversationHandler.END
 
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -278,7 +279,9 @@ class TelegramBot:
 
         # Finally, send the message
         await context.bot.send_message(
-            chat_id=self.config['TELEGRAM']['admin_id'], text=message, parse_mode=ParseMode.HTML
+            chat_id=self.config['TELEGRAM']['developer_id'],
+            text=message,
+            parse_mode=ParseMode.HTML
         )
 
     def run(self):
