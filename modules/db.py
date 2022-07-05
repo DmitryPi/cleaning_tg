@@ -79,6 +79,11 @@ class Database:
         user = self.get_objects_filter_by_value(conn, 'users', 'uid', user_id)[0]
         return User(*user)
 
+    def get_managers(self, conn) -> list[User]:
+        users = self.get_objects_filter_by_value(conn, 'users', 'role', 'Менеджер')
+        users = [User(*user) for user in users]
+        return users
+
     def get_objects_all(self, conn, table: str) -> list:
         """Return queryset of table objects"""
         try:

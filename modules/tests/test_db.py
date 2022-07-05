@@ -38,6 +38,13 @@ class TestDatabase(TestCase):
             'id': 5156307333,
             'language_code': 'ru'
         }
+        self.user_tgg = {
+            'is_bot': False,
+            'username': 'test',
+            'first_name': 'test',
+            'id': 5,
+            'language_code': 'ru'
+        }
 
     def tearDown(self):
         self.db_conn.close()
@@ -49,6 +56,16 @@ class TestDatabase(TestCase):
         assert isinstance(user, User)
         assert len(list(user.__dict__.keys())) == 8
         assert len(list(user.__dict__.values())) == 8
+
+    def test_insert_get_managers(self):
+        user = build_user(self.users[0], self.user_tg, manager=True)
+        user1 = build_user(self.users[0], self.user_tgg, manager=False)
+        self.db.insert_user(self.db_conn, user)
+        self.db.insert_user(self.db_conn, user1)
+        users = self.db.get_managers(self.db_conn)
+        assert len(users) == 1
+        assert users[0].username == 'DmitrydevPy'
+        assert users[0].role == 'Менеджер'
 
     def insert_test_objects(self):
         test_fields = ('test_bool', 'test_text')
