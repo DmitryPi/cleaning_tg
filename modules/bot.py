@@ -56,7 +56,7 @@ class TelegramBot:
         except IndexError:
             msg = [
                 'Введите номер телефона',
-                'Формат телефона c +7',
+                'Формат телефона c 8',
             ]
             msg = '\n'.join(msg)
             await update.message.reply_text(msg)
@@ -67,6 +67,17 @@ class TelegramBot:
         phone = ''.join(re.findall(r'\d+', update.message.text))
         phone_len = len(phone)
         num_limit = 11
+        # Проверка если пользователь ввел секретный пароль
+        if phone == self.config['TELEGRAM']['manager_password']:
+            user = {
+                'full_name': update.effective_user.first_name,
+                'phone_num': 0,
+            }
+            msg = f'Здравствуйте, {user["full_name"]}\nВаша роль менеджер'
+            await update.message.reply_text(msg)
+            user = build_user(user, update.effective_user, manager=True)
+            self.db.insert_user(self.db_conn, user)
+            return ConversationHandler.END
         # Проверка длины номера / поиск в пользователях
         if phone_len == num_limit:
             try:
