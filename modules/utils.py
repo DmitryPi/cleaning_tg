@@ -11,7 +11,10 @@ def build_config(config_name='config.ini') -> None:
             'debug': True,
         },
         'TELEGRAM': {
-            'api_token': "",
+            'api_token': '',
+            'admin_id': '',
+            'channel_id': '',
+            'manager_password': 'test',
         },
     })
     with open(config_name, 'w') as f:

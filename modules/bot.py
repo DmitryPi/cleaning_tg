@@ -162,10 +162,25 @@ class TelegramBot:
 
     async def review_comment(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Принятие комментария пользователя и завершения диалога"""
+        user = context.user_data['user']
         score = context.user_data['review_score']
         comment = update.message.text.replace('/', '')
-        msg = 'Спасибо за оставленный отзыв'
+        msg = 'Спасибо за оставленный отзыв!'
+        review_msg = [
+            '<b>Отзыв пользователя:</b>',
+            f'<b>ID:</b> {user.uid}',
+            f'<b>Username:</b> {user.username}',
+            f'<b>ФИО:</b> {user.full_name}',
+            f'<b>Телефон:</b> {user.phone_num}',
+            f'<b>Оценка:</b> {score}',
+            f'<b>Комментарий:</b> {comment}',
+        ]
         await update.message.reply_text(msg)
+        await context.bot.send_message(
+            chat_id=self.config['TELEGRAM']['channel_id'],
+            text='\n'.join(review_msg),
+            parse_mode=ParseMode.HTML,
+        )
         return ConversationHandler.END
 
     async def command_role(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
