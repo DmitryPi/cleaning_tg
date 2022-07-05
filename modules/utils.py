@@ -1,6 +1,7 @@
 import configparser
 import codecs
 import json
+import re
 
 
 def build_config(config_name='config.ini') -> None:
@@ -46,3 +47,30 @@ def load_json(file_path: str) -> list[dict]:
     with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
         return data
+
+
+def slice_sheet_dates(date: str) -> tuple[str]:
+    sheet_days = {
+        'ежедневно': range(0, 7),
+        'будние': range(0, 5),
+        'понедельник': 0,
+        'вторник': 1,
+        'среда': 2,
+        'четверг': 3,
+        'пятница': 4,
+        'суббота': 5,
+        'воскресенье': 6,
+    }
+    days = []
+    for day in sheet_days:
+        if day in date.lower():
+            try:
+                days += sheet_days[day]
+            except TypeError:
+                days.append(sheet_days[day])
+    sheet_time = re.search(r'\d+:\d+', date)[0]
+    return (days, sheet_time)
+
+
+def dehumanize_date(day: str) -> int:
+    pass
