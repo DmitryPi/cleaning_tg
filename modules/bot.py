@@ -50,7 +50,12 @@ class TelegramBot:
         user_id = update.effective_user.id
         try:
             user = self.db.get_user(self.db_conn, user_id)
-            msg = f'Здравствуйте, {user.full_name}'
+            msg = [
+                f'Здравствуйте, {user.full_name}',
+                'Если вы хотите оставить отзыв',
+                'Вызовите команду - /review',
+            ]
+            msg = '\n'.join(msg)
             await update.message.reply_text(msg)
             return ConversationHandler.END
         except IndexError:
@@ -106,6 +111,7 @@ class TelegramBot:
                 '<b>Доступные команды:</b>',
                 '/start - Аутентификацию по номеру телефона',
                 '/help - Вызвать помошник команд',
+                '/role - Изменение роли',
                 '/review - Оставить отзыв',
             ]
             if user.role == UserRole.MANAGER.value:
