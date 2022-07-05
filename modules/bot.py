@@ -40,6 +40,11 @@ class TelegramBot:
     def auth_invalid_msg(self) -> str:
         return 'Пройдите аутентификацию.\nИспользуйте команду - /start'
 
+    async def raw_send_message(self, chat_id, msg):
+        """Raw api send_message: asyncio.run(raw_send_message())"""
+        async with Bot(self.api_token) as bot:
+            await bot.send_message(chat_id, msg)
+
     async def command_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Инициировать аутентификацию пользователя"""
         user_id = update.effective_user.id
