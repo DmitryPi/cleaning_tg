@@ -182,7 +182,7 @@ class TelegramBot:
         ]
         await update.message.reply_text(msg)
         await context.bot.send_message(
-            chat_id=self.config['TELEGRAM']['channel_id'],
+            chat_id=self.config['TELEGRAM']['admin_id'],
             text='\n'.join(review_msg),
             parse_mode=ParseMode.HTML,
         )
