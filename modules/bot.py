@@ -216,6 +216,7 @@ class TelegramBot:
                 '/help - Вызвать помошник команд',
                 '/role - Изменение роли',
                 '/review - Оставить отзыв',
+                '/cancel - Прервать диалог',
             ]
             msg = '\n'.join(msg)
             await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
