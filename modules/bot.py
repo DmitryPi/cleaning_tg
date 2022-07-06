@@ -97,7 +97,8 @@ class SenderBot:
         while True:
             try:
                 users = load_json('assets/users.json')
-                users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
+                users_db = [
+                    User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
                 current_tasks = self.get_task_jobs()
                 new_tasks = self.build_task_jobs(users, users_db)
                 # если нет задач, добавить новые задачи
