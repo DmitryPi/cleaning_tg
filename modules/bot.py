@@ -1,19 +1,11 @@
+import asyncio
 import re
 import html
 import json
 import logging
 import traceback
 
-from .db import Database
-from .users import User, UserRole, build_user
-from .utils import (
-    load_config,
-    load_json,
-    update_json_file,
-    slice_sheet_dates,
-    format_cleaning_date,
-)
-
+from time import sleep
 from telegram import (
     Bot,
     InlineKeyboardButton,
@@ -32,6 +24,18 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.error import BadRequest
+
+from .db import Database
+from .users import User, UserRole, build_user
+from .utils import (
+    load_config,
+    load_json,
+    update_json_file,
+    get_datetime_passed_seconds,
+    slice_sheet_dates,
+    format_cleaning_date,
+)
 
 
 class SenderBot:
@@ -39,14 +43,14 @@ class SenderBot:
         self.api_token = api_token
         self.db = Database()
         self.db_conn = self.db.create_connection()
-        self.jobs_path = 'assets/cleaning_jobs.json'
+        self.jobs_path = 'assets/task_jobs.json'
 
     async def raw_send_message(self, chat_id, msg):
         """Raw api send_message: asyncio.run(raw_send_message())"""
         async with Bot(self.api_token) as bot:
             await bot.send_message(chat_id, msg)
 
-    def get_cleaning_jobs(self) -> list[dict]:
+    def get_task_jobs(self) -> list[dict]:
         try:
             jobs = load_json(self.jobs_path)
         except FileNotFoundError:
@@ -54,7 +58,7 @@ class SenderBot:
             jobs = load_json(self.jobs_path)
         return jobs
 
-    def build_job(self, user: User, date: str) -> dict:
+    def build_task_job(self, user: User, date: str) -> dict:
         job = {
             'uid': user.uid,
             'phone_num': user.phone_num,
@@ -63,7 +67,7 @@ class SenderBot:
         }
         return job
 
-    def build_cleaning_jobs(self, users: dict, users_db: list[User]) -> list[dict]:
+    def build_task_jobs(self, users: dict, users_db: list[User]) -> list[dict]:
         jobs = []
         for user in users:
             date = slice_sheet_dates(user['clean_time'])
@@ -72,26 +76,39 @@ class SenderBot:
                 continue
             for user_db in users_db:
                 if user['phone_num'] == user_db.phone_num:
-                    job = self.build_job(user_db, date)
+                    job = self.build_task_job(user_db, date)
                     jobs.append(job)
         return jobs
 
+    def remove_task(self, tasks) -> list[dict]:
+        """"""
+        pass
+
     def run(self):
-        """
-        Загрузить пользователей таблицы
-        Загрузить пользователей бд
-        Загрузить current_cleaning_jobs
-        Создать новые cleaning_jobs
-        Проверить время cleaning job
-        Проверить на уникальность
-        """
         users = load_json('assets/users.json')
         users_db = self.db.get_objects_all(self.db_conn, 'users')
         users_db = [User(*user) for user in users_db]
-        current_jobs = self.get_cleaning_jobs()
-        jobs = self.build_cleaning_jobs(users, users_db)
-        print(current_jobs)
-        print(jobs)
+        current_tasks = self.get_task_jobs()
+        new_tasks = self.build_task_jobs(users, users_db)
+        if not current_tasks:
+            if new_tasks:
+                update_json_file(new_tasks, file_path=self.jobs_path)
+                current_tasks = self.get_task_jobs()
+
+        # проверить таски по времени / отправить сообщение в тг / задать sent=True
+        for task in current_tasks:
+            if task['sent']:
+                continue
+            until_job = get_datetime_passed_seconds(task['job_at'], reverse=True)
+            if until_job < 0:
+                print('- Sending message to:', task['uid'])
+                msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
+                try:
+                    asyncio.run(self.raw_send_message(task['uid'], msg))
+                except BadRequest:
+                    print('- chat not found')
+                task['sent'] = True
+        update_json_file(current_tasks, file_path=self.jobs_path)
 
 
 class TelegramBot:

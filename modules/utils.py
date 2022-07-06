@@ -58,6 +58,18 @@ def update_json_file(data, file_path, mode='w'):
         json.dump(data, json_file, indent=4)
 
 
+def get_datetime_passed_seconds(
+        time_stamp, date_fmt='%Y-%m-%d %H:%M:%S', time_now=None, reverse=False):
+    time_now = time_now if time_now else datetime.now()
+    time_now = datetime.strptime(str(time_now).split('.')[0], date_fmt)
+    time_stamp = datetime.strptime(str(time_stamp).split('.')[0], date_fmt)
+    if reverse:
+        time_passed = time_stamp - time_now
+    else:
+        time_passed = time_now - time_stamp
+    return int(time_passed.total_seconds())
+
+
 def slice_sheet_dates(date: str) -> tuple[list[int], str]:
     """Отформатировать строку слов/времени к datetime формату"""
     sheet_days = {
