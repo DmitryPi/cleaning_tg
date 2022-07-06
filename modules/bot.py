@@ -31,6 +31,7 @@ from .users import User, UserRole, build_user
 from .utils import (
     load_config,
     load_json,
+    handle_error,
     update_json_file,
     get_datetime_passed_seconds,
     slice_sheet_dates,
@@ -82,33 +83,36 @@ class SenderBot:
 
     def run(self):
         while True:
-            users = load_json('assets/users.json')
-            users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
-            current_tasks = self.get_task_jobs()
-            new_tasks = self.build_task_jobs(users, users_db)
-            if not current_tasks:
-                if new_tasks:
-                    update_json_file(new_tasks, file_path=self.jobs_path)
-                    current_tasks = self.get_task_jobs()
-            # проверить таски по времени / отправить сообщение в тг / задать sent=True
-            for i, task in enumerate(current_tasks):
-                if task['sent']:
-                    # проверить если наступил новый день
-                    today = str(datetime.today().date())
-                    if today not in task['job_at']:
-                        del current_tasks[i]
-                    continue
-                # сколько секунд до задачи
-                until_task = get_datetime_passed_seconds(task['job_at'], reverse=True)
-                if until_task < 0:
-                    print('- Sending message to:', task['uid'])
-                    msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
-                    try:
-                        asyncio.run(self.raw_send_message(task['uid'], msg))
-                    except BadRequest:
-                        print('- chat not found')
-                    task['sent'] = True
-                    update_json_file(current_tasks, file_path=self.jobs_path)
+            try:
+                users = load_json('assets/users.json')
+                users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
+                current_tasks = self.get_task_jobs()
+                new_tasks = self.build_task_jobs(users, users_db)
+                if not current_tasks:
+                    if new_tasks:
+                        update_json_file(new_tasks, file_path=self.jobs_path)
+                        current_tasks = self.get_task_jobs()
+                # проверить таски по времени / отправить сообщение в тг / задать sent=True
+                for i, task in enumerate(current_tasks):
+                    if task['sent']:
+                        # проверить если наступил новый день
+                        today = str(datetime.today().date())
+                        if today not in task['job_at']:
+                            del current_tasks[i]
+                        continue
+                    # сколько секунд до задачи
+                    until_task = get_datetime_passed_seconds(task['job_at'], reverse=True)
+                    if until_task < 0:
+                        print('- Sending message to:', task['uid'])
+                        msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
+                        try:
+                            asyncio.run(self.raw_send_message(task['uid'], msg))
+                        except BadRequest:
+                            print('- chat not found')
+                        task['sent'] = True
+                        update_json_file(current_tasks, file_path=self.jobs_path)
+            except Exception as e:
+                handle_error(e, to_file=True)
             sleep(5)
 
 
