@@ -96,12 +96,15 @@ class SenderBot:
                 Обновляем sent=True
            Обновляем файл задач
         """
+        i = 0
         while True:
             try:
+                if not i % 20:
+                    gspread_connect_save_users()
+                    i = 1
                 users = load_json('assets/users.json')
                 users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
                 current_tasks = self.get_task_jobs()
-                print(current_tasks)
                 new_tasks = self.build_task_jobs(users, users_db)
                 # если нет задач, добавить новые задачи
                 if not current_tasks:
@@ -127,6 +130,7 @@ class SenderBot:
                             print('- chat not found')
                         task['sent'] = True
                 update_json_file(current_tasks, file_path=self.jobs_path)
+                i += 1
             except Exception as e:
                 handle_error(e, to_file=True)
             sleep(5)
@@ -205,7 +209,7 @@ class TelegramBot:
     async def command_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Помошник для вывода команд"""
         try:
-            user = self.db.get_user(self.db_conn, update.effective_user.id)
+            self.db.get_user(self.db_conn, update.effective_user.id)
             msg = [
                 '<b>Доступные команды:</b>',
                 '/start - Аутентификацию по номеру телефона',
@@ -213,8 +217,6 @@ class TelegramBot:
                 '/role - Изменение роли',
                 '/review - Оставить отзыв',
             ]
-            if user.role == UserRole.MANAGER.value:
-                msg.append('/upload - Загрузить таблицу пользователей')
             msg = '\n'.join(msg)
             await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
         except IndexError:

@@ -3,11 +3,8 @@ import codecs
 import gspread
 import json
 import re
-import unicodedata
 
 from datetime import datetime
-
-from .users import User
 
 
 def build_config(config_name='config.ini') -> None:
