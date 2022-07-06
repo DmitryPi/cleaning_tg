@@ -391,14 +391,6 @@ class TelegramBot:
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
         )
-        # upload conversation
-        upload_conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('upload', self.command_upload)],
-            states={
-                1: [MessageHandler(~filters.COMMAND, self.upload_users)],
-            },
-            fallbacks=[CommandHandler('cancel', self.conv_cancel)],
-        )
         # review conversation
         review_conv_handler = ConversationHandler(
             entry_points=[CommandHandler('review', self.command_review)],
