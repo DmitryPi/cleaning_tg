@@ -11,7 +11,6 @@ from telegram import (
     Bot,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
 )
@@ -110,7 +109,7 @@ class SenderBot:
                         except BadRequest:
                             print('- chat not found')
                         task['sent'] = True
-                        update_json_file(current_tasks, file_path=self.jobs_path)
+                update_json_file(current_tasks, file_path=self.jobs_path)
             except Exception as e:
                 handle_error(e, to_file=True)
             sleep(5)
@@ -227,7 +226,7 @@ class TelegramBot:
         query = update.callback_query
         await query.answer()
         context.user_data.update({'review_score': query.data})
-        msg = 'Напишите отзыв:\nПропустить - /skip'
+        msg = 'Напишите комментарий:\nПропустить - /skip'
         await query.edit_message_text(text=msg)
         return 2
 
@@ -341,7 +340,6 @@ class TelegramBot:
 
     def run(self):
         """Запустить бота"""
-        print(f'- {__class__.__name__} started')
         # Create the Application and pass it your bot's token.
         application = Application.builder().token(self.api_token).build()
         # start conversation

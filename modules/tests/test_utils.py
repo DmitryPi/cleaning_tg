@@ -56,5 +56,4 @@ class TestUtils(TestCase):
         assert results[0] == f'{today} 20:00:00'
         assert results[1] == f'{today} 12:00:00'
         assert results[2] == f'{today} 11:00:00'
-        assert not results[3]
         assert results[-1] == f'{today} 13:30:00'

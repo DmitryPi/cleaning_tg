@@ -95,6 +95,7 @@ def slice_sheet_dates(date: str) -> tuple[list[int], str]:
 
 
 def format_cleaning_date(date: tuple[list[int], str]) -> str:
+    """Найти есть ли сегодня уборка; Перевести дни и время в datetime формат"""
     today = datetime.today()
     for day in date[0]:
         if day != today.weekday():
