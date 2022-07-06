@@ -5,6 +5,7 @@ import json
 import logging
 import traceback
 
+
 from datetime import datetime
 from time import sleep
 from telegram import (
@@ -35,6 +36,7 @@ from .utils import (
     get_datetime_passed_seconds,
     slice_sheet_dates,
     format_cleaning_date,
+    gspread_connect_save_users,
 )
 
 
@@ -97,9 +99,9 @@ class SenderBot:
         while True:
             try:
                 users = load_json('assets/users.json')
-                users_db = [
-                    User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
+                users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
                 current_tasks = self.get_task_jobs()
+                print(current_tasks)
                 new_tasks = self.build_task_jobs(users, users_db)
                 # если нет задач, добавить новые задачи
                 if not current_tasks:

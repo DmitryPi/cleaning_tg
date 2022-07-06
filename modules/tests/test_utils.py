@@ -1,7 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 
-from ..utils import load_config, slice_sheet_dates, format_cleaning_date
+from ..utils import load_config, slice_sheet_dates, format_cleaning_date, gspread_connect_save_users
 
 
 class TestUtils(TestCase):
@@ -57,3 +57,6 @@ class TestUtils(TestCase):
         assert results[1] == f'{today} 12:00:00'
         assert results[2] == f'{today} 11:00:00'
         assert results[-1] == f'{today} 13:30:00'
+
+    def test_gspread_connect(self):
+        gspread_connect_save_users()

@@ -1,7 +1,9 @@
 import configparser
 import codecs
+import gspread
 import json
 import re
+import unicodedata
 
 from datetime import datetime
 
@@ -54,7 +56,7 @@ def load_json(file_path: str) -> list[dict]:
 
 
 def update_json_file(data, file_path, mode='w'):
-    with open(f'{file_path}', mode, encoding='utf-8') as json_file:
+    with open(f'{file_path}', mode, encoding='UTF-8') as json_file:
         json.dump(data, json_file, indent=4)
 
 
@@ -102,3 +104,21 @@ def format_cleaning_date(date: tuple[list[int], str]) -> str:
             continue
         job_at = f'{today.date()} {date[1]}:00'
         return job_at
+
+
+def gspread_connect_save_users() -> list[list[str]]:
+    sa = gspread.service_account(filename='assets/service_account.json')
+    sheet = sa.open('Таблица для сбора обратной связи')
+    worksheet = sheet.worksheet("Лист1")
+    users = worksheet.get_all_values()
+    json_users = []
+    for user in users[1:]:
+        user_adress = user[0]
+        new_user = {
+            'adress': user_adress,
+            'full_name': user[1],
+            'phone_num': int(user[2]),
+            'clean_time': str(user[3]),
+        }
+        json_users.append(new_user)
+    update_json_file(json_users, file_path='assets/users.json')
