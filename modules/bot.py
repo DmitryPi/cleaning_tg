@@ -241,10 +241,9 @@ class TelegramBot:
             user = self.db.get_user(self.db_conn, update.effective_user.id)
             msg = 'Оцените качество услуги:'
             score_btns = [
-                [InlineKeyboardButton(i, callback_data=i) for i in range(1, 6)],
-                [InlineKeyboardButton(i, callback_data=i) for i in range(6, 11)]
+                [InlineKeyboardButton(i, callback_data=i) for i in range(-2, 3)]
             ]
-            reply_keyboard = [score_btns[0], score_btns[1]]
+            reply_keyboard = [score_btns[0]]
             reply_markup = InlineKeyboardMarkup(reply_keyboard)
             context.user_data.update({'user': user})  # save current user
             await update.message.reply_text(msg, reply_markup=reply_markup)
