@@ -1,11 +1,20 @@
 from unittest import TestCase
+from datetime import datetime
 
-from ..utils import load_config, slice_sheet_dates
+from ..utils import load_config, slice_sheet_dates, create_cleaning_job_datetime
 
 
 class TestUtils(TestCase):
     def setUp(self):
-        pass
+        self.dates = [
+            'Ежедневно в 20:00',
+            'Ежедневно в 12:00',
+            '5/2 Будние дни, в 11:00',
+            'понедельник, четверг в 13:30',
+            '5/2 Будние дни, в 11:00',
+            '5/2 Будние дни, в 18:00',
+            'Ежедневно в 13:30 по рем.зоне. Ежедневно в 19:30 по магазину'
+        ]
 
     def test_load_config(self):
         sections = ['MAIN', 'TELEGRAM']
@@ -16,17 +25,8 @@ class TestUtils(TestCase):
             self.assertTrue(section in config_sections)
 
     def test_slice_sheet_dates(self):
-        dates = [
-            'Ежедневно в 20:00',
-            'Ежедневно в 12:00',
-            '5/2 Будние дни, в 11:00',
-            'понедельник, четверг в 13:30',
-            '5/2 Будние дни, в 11:00',
-            '5/2 Будние дни, в 18:00',
-            'Ежедневно в 13:30 по рем.зоне. Ежедневно в 19:30 по магазину'
-        ]
         results = []
-        for i, date in enumerate(dates):
+        for i, date in enumerate(self.dates):
             result = slice_sheet_dates(date)
             if i == 0:
                 assert len(result[0]) == 7
@@ -44,5 +44,17 @@ class TestUtils(TestCase):
             elif i == 4:
                 assert len(result[0]) == 5
                 assert result[1] == '11:00'
-            print(result)
             results.append(result)
+
+    def test_create_cleaning_job_datetime(self):
+        dates = [slice_sheet_dates(i) for i in self.dates]
+        results = []
+        for date in dates:
+            result = create_cleaning_job_datetime(date)
+            results.append(result)
+        today = datetime.today().date()
+        assert results[0] == f'{today} 20:00:00'
+        assert results[1] == f'{today} 12:00:00'
+        assert results[2] == f'{today} 11:00:00'
+        assert not results[3]
+        assert results[-1] == f'{today} 13:30:00'

@@ -3,6 +3,8 @@ import codecs
 import json
 import re
 
+from datetime import datetime
+
 
 def build_config(config_name='config.ini') -> None:
     """Build default config section key/values"""
@@ -49,7 +51,8 @@ def load_json(file_path: str) -> list[dict]:
         return data
 
 
-def slice_sheet_dates(date: str) -> tuple[str]:
+def slice_sheet_dates(date: str) -> tuple[list[int], str]:
+    """Четко разделить Ежедневно в 13:30 по рем.зоне. Ежедневно в 19:30 по магазину"""
     sheet_days = {
         'ежедневно': range(0, 7),
         'будние': range(0, 5),
@@ -72,5 +75,17 @@ def slice_sheet_dates(date: str) -> tuple[str]:
     return (days, sheet_time)
 
 
-def dehumanize_date(day: str) -> int:
-    pass
+def create_cleaning_job_datetime(date: tuple[list[int], str]):
+    """
+    Сделать файл cron_jobs.json
+    Каждый день проходить по пользователям
+    Проверять есть ли сегодня уборка
+    Добавлять в cron_jobs оповещение
+    После отправки удалять из cron_jobs
+    """
+    today = datetime.today()
+    for day in date[0]:
+        if day != today.weekday():
+            continue
+        job_at = f'{today.date()} {date[1]}:00'
+        return job_at
