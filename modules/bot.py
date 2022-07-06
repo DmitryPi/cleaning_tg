@@ -200,40 +200,6 @@ class TelegramBot:
         except IndexError:
             await update.message.reply_text(self.auth_invalid_msg)
 
-    async def command_upload(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Загрузить обновленных пользователей"""
-        try:
-            user = self.db.get_user(self.db_conn, update.effective_user.id)
-            if user.role == UserRole.MANAGER.value:
-                msg = 'Загрузите файл в формате json'
-                await update.message.reply_text(msg)
-                return 1
-            else:
-                msg = 'У вас недостаточно прав.'
-                await update.message.reply_text(msg)
-                return ConversationHandler.END
-        except IndexError:
-            await update.message.reply_text(self.auth_invalid_msg)
-            return ConversationHandler.END
-
-    async def upload_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Проверка типа файла и его обновление"""
-        try:
-            new_users = update.message.document
-            new_users_path = 'assets/users.json'
-            if new_users['mime_type'] == 'application/json':  # check type
-                new_users = await new_users.get_file()
-                await new_users.download(new_users_path)
-                msg = 'Новые пользователи загружены'
-                await update.message.reply_text(msg)
-                return ConversationHandler.END
-            else:  # invalid type
-                raise TypeError
-        except TypeError:
-            msg = 'Неверный формат файла\nДля отмены операции - /cancel'
-            await update.message.reply_text(msg)
-            return 1
-
     async def command_review(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Создать клавиатуру для оценки 1-10"""
         try:
