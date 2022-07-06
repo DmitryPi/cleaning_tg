@@ -38,6 +38,7 @@ from .utils import (
     format_cleaning_date,
     gspread_connect_save_users,
 )
+from modules.db import Database
 
 
 class SenderBot:
@@ -137,11 +138,11 @@ class SenderBot:
 
 
 class TelegramBot:
-    def __init__(self, api_token: str, db, db_conn, config=None):
+    def __init__(self, api_token: str, config=None):
         self.api_token = api_token
         self.config = config if config else load_config()
-        self.db = db
-        self.db_conn = db_conn
+        self.db = Database()
+        self.db_conn = self.db.create_connection()
 
     @property
     def auth_invalid_msg(self) -> str:
@@ -191,7 +192,14 @@ class TelegramBot:
                 users = load_json('assets/users.json')
                 user = [user for user in users if user['phone_num'] == int(phone)][0]
                 msg = f'Здравствуйте, {user["full_name"]}'
+                promo_msg = [
+                    'Мы клининговая компания "Наименование"',
+                    'Хотим собрать обратную связь.',
+                    'Вы можете посодействовать нам, вызвав команду /review',
+                ]
+                promo_msg = '\n'.join(promo_msg)
                 await update.message.reply_text(msg)
+                await update.message.reply_text(promo_msg)
                 # insert user to db
                 user = build_user(user, update.effective_user)
                 self.db.insert_user(self.db_conn, user)
@@ -369,6 +377,7 @@ class TelegramBot:
                 1: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.verif_phone)]
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
+            per_user=True,
         )
         # role change conversation
         role_conv_handler = ConversationHandler(
@@ -378,6 +387,7 @@ class TelegramBot:
                 2: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.role_change_password)]
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
+            per_user=True,
         )
         # review conversation
         review_conv_handler = ConversationHandler(
@@ -387,6 +397,7 @@ class TelegramBot:
                 2: [MessageHandler(filters.TEXT, self.review_comment)],
             },
             fallbacks=[CommandHandler('cancel', self.conv_cancel)],
+            per_user=True,
         )
         # on different commands - answer in Telegram
         application.add_handler(start_conv_handler)

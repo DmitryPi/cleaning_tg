@@ -22,5 +22,5 @@ if __name__ == '__main__':
 
     sender_bot = SenderBot(config['TELEGRAM']['api_token'], db, db_conn)
     Thread(target=sender_bot.run, daemon=True).start()
-    telegram_bot = TelegramBot(config['TELEGRAM']['api_token'], db, db_conn)
+    telegram_bot = TelegramBot(config['TELEGRAM']['api_token'])
     telegram_bot.run()
