@@ -39,46 +39,59 @@ class SenderBot:
         self.api_token = api_token
         self.db = Database()
         self.db_conn = self.db.create_connection()
+        self.jobs_path = 'assets/cleaning_jobs.json'
 
     async def raw_send_message(self, chat_id, msg):
         """Raw api send_message: asyncio.run(raw_send_message())"""
         async with Bot(self.api_token) as bot:
             await bot.send_message(chat_id, msg)
 
-    def add_cleaning_jobs(self, cleaning_jobs):
-        pass
+    def get_cleaning_jobs(self) -> list[dict]:
+        try:
+            jobs = load_json(self.jobs_path)
+        except FileNotFoundError:
+            update_json_file([], self.jobs_path)
+            jobs = load_json(self.jobs_path)
+        return jobs
 
-    def build_cleaning_job(self, user: User, date: str) -> dict:
+    def build_job(self, user: User, date: str) -> dict:
         job = {
             'uid': user.uid,
             'phone_num': user.phone_num,
             'job_at': date,
+            'sent': False,
         }
         return job
 
-    def add_cleaning_job(self, cleaning_job):
-        """Добавить оповещение об уборке в assets/cleaning_jobs.json"""
-        jobs_path = 'assets/cleaning_jobs.json'
-        try:
-            jobs = load_json(jobs_path)
-        except FileNotFoundError:
-            update_json_file([], jobs_path)
-        jobs = load_json(jobs_path)
-        if not jobs:
-            update_json_file([cleaning_job], jobs_path)
-        else:
-            if cleaning_job in jobs:
-                return None
-            update_json_file(jobs.append(cleaning_job), jobs_path, mode='a')
+    def build_cleaning_jobs(self, users: dict, users_db: list[User]) -> list[dict]:
+        jobs = []
+        for user in users:
+            date = slice_sheet_dates(user['clean_time'])
+            date = format_cleaning_date(date)
+            if not date:
+                continue
+            for user_db in users_db:
+                if user['phone_num'] == user_db.phone_num:
+                    job = self.build_job(user_db, date)
+                    jobs.append(job)
+        return jobs
 
     def run(self):
+        """
+        Загрузить пользователей таблицы
+        Загрузить пользователей бд
+        Загрузить current_cleaning_jobs
+        Создать новые cleaning_jobs
+        Проверить время cleaning job
+        Проверить на уникальность
+        """
         users = load_json('assets/users.json')
         users_db = self.db.get_objects_all(self.db_conn, 'users')
         users_db = [User(*user) for user in users_db]
-        for user in users:
-            for user_db in users_db:
-                if user['phone_num'] == user_db.phone_num:
-                    print(user['phone_num'], user_db.phone_num)
+        current_jobs = self.get_cleaning_jobs()
+        jobs = self.build_cleaning_jobs(users, users_db)
+        print(current_jobs)
+        print(jobs)
 
 
 class TelegramBot:
