@@ -20,11 +20,11 @@ class Database:
                 updated text NOT NULL
             );"""
 
-    def create_connection(self, db_file='db.sqlite3'):
+    def create_connection(self, db_file='db.sqlite3', check_same_thread=True):
         """Connect to db/Create `db.sqlite3` in root folder if not exist"""
         conn = None
         try:
-            conn = sqlite3.connect(db_file)
+            conn = sqlite3.connect(db_file, check_same_thread=check_same_thread)
             logging.info('Connected to db\n')
         except Exception as e:
             handle_error(e)

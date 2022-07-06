@@ -5,6 +5,7 @@ import json
 import logging
 import traceback
 
+from datetime import datetime
 from time import sleep
 from telegram import (
     Bot,
@@ -26,7 +27,6 @@ from telegram.ext import (
 )
 from telegram.error import BadRequest
 
-from .db import Database
 from .users import User, UserRole, build_user
 from .utils import (
     load_config,
@@ -39,10 +39,10 @@ from .utils import (
 
 
 class SenderBot:
-    def __init__(self, api_token: str, config=None):
+    def __init__(self, api_token: str, db, db_conn, config=None):
         self.api_token = api_token
-        self.db = Database()
-        self.db_conn = self.db.create_connection()
+        self.db = db
+        self.db_conn = db_conn
         self.jobs_path = 'assets/task_jobs.json'
 
     async def raw_send_message(self, chat_id, msg):
@@ -80,43 +80,44 @@ class SenderBot:
                     jobs.append(job)
         return jobs
 
-    def remove_task(self, tasks) -> list[dict]:
-        """"""
-        pass
-
     def run(self):
-        users = load_json('assets/users.json')
-        users_db = self.db.get_objects_all(self.db_conn, 'users')
-        users_db = [User(*user) for user in users_db]
-        current_tasks = self.get_task_jobs()
-        new_tasks = self.build_task_jobs(users, users_db)
-        if not current_tasks:
-            if new_tasks:
-                update_json_file(new_tasks, file_path=self.jobs_path)
-                current_tasks = self.get_task_jobs()
-
-        # проверить таски по времени / отправить сообщение в тг / задать sent=True
-        for task in current_tasks:
-            if task['sent']:
-                continue
-            until_job = get_datetime_passed_seconds(task['job_at'], reverse=True)
-            if until_job < 0:
-                print('- Sending message to:', task['uid'])
-                msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
-                try:
-                    asyncio.run(self.raw_send_message(task['uid'], msg))
-                except BadRequest:
-                    print('- chat not found')
-                task['sent'] = True
-        update_json_file(current_tasks, file_path=self.jobs_path)
+        while True:
+            users = load_json('assets/users.json')
+            users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
+            current_tasks = self.get_task_jobs()
+            new_tasks = self.build_task_jobs(users, users_db)
+            if not current_tasks:
+                if new_tasks:
+                    update_json_file(new_tasks, file_path=self.jobs_path)
+                    current_tasks = self.get_task_jobs()
+            # проверить таски по времени / отправить сообщение в тг / задать sent=True
+            for i, task in enumerate(current_tasks):
+                if task['sent']:
+                    # проверить если наступил новый день
+                    today = str(datetime.today().date())
+                    if today not in task['job_at']:
+                        del current_tasks[i]
+                    continue
+                # сколько секунд до задачи
+                until_task = get_datetime_passed_seconds(task['job_at'], reverse=True)
+                if until_task < 0:
+                    print('- Sending message to:', task['uid'])
+                    msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
+                    try:
+                        asyncio.run(self.raw_send_message(task['uid'], msg))
+                    except BadRequest:
+                        print('- chat not found')
+                    task['sent'] = True
+                    update_json_file(current_tasks, file_path=self.jobs_path)
+            sleep(5)
 
 
 class TelegramBot:
-    def __init__(self, api_token: str, config=None):
+    def __init__(self, api_token: str, db, db_conn, config=None):
         self.api_token = api_token
         self.config = config if config else load_config()
-        self.db = Database()
-        self.db_conn = self.db.create_connection()
+        self.db = db
+        self.db_conn = db_conn
         self.users = load_json('assets/users.json')
 
     @property
@@ -411,7 +412,7 @@ class TelegramBot:
         application.add_handler(start_conv_handler)
         application.add_handler(CommandHandler('help', self.command_help))
         application.add_handler(role_conv_handler)
-        application.add_handler(upload_conv_handler)
+        # application.add_handler(upload_conv_handler)
         application.add_handler(review_conv_handler)
         # ...and the error handler
         application.add_error_handler(self.error_handler)
