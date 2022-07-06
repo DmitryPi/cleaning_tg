@@ -1,7 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 
-from ..utils import load_config, slice_sheet_dates, create_cleaning_job_datetime
+from ..utils import load_config, slice_sheet_dates, format_cleaning_date
 
 
 class TestUtils(TestCase):
@@ -46,11 +46,11 @@ class TestUtils(TestCase):
                 assert result[1] == '11:00'
             results.append(result)
 
-    def test_create_cleaning_job_datetime(self):
+    def test_format_cleaning_date(self):
         dates = [slice_sheet_dates(i) for i in self.dates]
         results = []
         for date in dates:
-            result = create_cleaning_job_datetime(date)
+            result = format_cleaning_date(date)
             results.append(result)
         today = datetime.today().date()
         assert results[0] == f'{today} 20:00:00'

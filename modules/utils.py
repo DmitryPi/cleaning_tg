@@ -5,6 +5,8 @@ import re
 
 from datetime import datetime
 
+from .users import User
+
 
 def build_config(config_name='config.ini') -> None:
     """Build default config section key/values"""
@@ -51,8 +53,13 @@ def load_json(file_path: str) -> list[dict]:
         return data
 
 
+def update_json_file(data, file_path, mode='w'):
+    with open(f'{file_path}', mode, encoding='utf-8') as json_file:
+        json.dump(data, json_file, indent=4)
+
+
 def slice_sheet_dates(date: str) -> tuple[list[int], str]:
-    """Четко разделить Ежедневно в 13:30 по рем.зоне. Ежедневно в 19:30 по магазину"""
+    """Отформатировать строку слов/времени к datetime формату"""
     sheet_days = {
         'ежедневно': range(0, 7),
         'будние': range(0, 5),
@@ -75,14 +82,7 @@ def slice_sheet_dates(date: str) -> tuple[list[int], str]:
     return (days, sheet_time)
 
 
-def create_cleaning_job_datetime(date: tuple[list[int], str]):
-    """
-    Сделать файл cron_jobs.json
-    Каждый день проходить по пользователям
-    Проверять есть ли сегодня уборка
-    Добавлять в cron_jobs оповещение
-    После отправки удалять из cron_jobs
-    """
+def format_cleaning_date(date: tuple[list[int], str]) -> str:
     today = datetime.today()
     for day in date[0]:
         if day != today.weekday():

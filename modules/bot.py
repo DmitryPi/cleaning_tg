@@ -5,8 +5,14 @@ import logging
 import traceback
 
 from .db import Database
-from .users import UserRole, build_user
-from .utils import load_config, load_json
+from .users import User, UserRole, build_user
+from .utils import (
+    load_config,
+    load_json,
+    update_json_file,
+    slice_sheet_dates,
+    format_cleaning_date,
+)
 
 from telegram import (
     Bot,
@@ -28,6 +34,53 @@ from telegram.ext import (
 )
 
 
+class SenderBot:
+    def __init__(self, api_token: str, config=None):
+        self.api_token = api_token
+        self.db = Database()
+        self.db_conn = self.db.create_connection()
+
+    async def raw_send_message(self, chat_id, msg):
+        """Raw api send_message: asyncio.run(raw_send_message())"""
+        async with Bot(self.api_token) as bot:
+            await bot.send_message(chat_id, msg)
+
+    def add_cleaning_jobs(self, cleaning_jobs):
+        pass
+
+    def build_cleaning_job(self, user: User, date: str) -> dict:
+        job = {
+            'uid': user.uid,
+            'phone_num': user.phone_num,
+            'job_at': date,
+        }
+        return job
+
+    def add_cleaning_job(self, cleaning_job):
+        """Добавить оповещение об уборке в assets/cleaning_jobs.json"""
+        jobs_path = 'assets/cleaning_jobs.json'
+        try:
+            jobs = load_json(jobs_path)
+        except FileNotFoundError:
+            update_json_file([], jobs_path)
+        jobs = load_json(jobs_path)
+        if not jobs:
+            update_json_file([cleaning_job], jobs_path)
+        else:
+            if cleaning_job in jobs:
+                return None
+            update_json_file(jobs.append(cleaning_job), jobs_path, mode='a')
+
+    def run(self):
+        users = load_json('assets/users.json')
+        users_db = self.db.get_objects_all(self.db_conn, 'users')
+        users_db = [User(*user) for user in users_db]
+        for user in users:
+            for user_db in users_db:
+                if user['phone_num'] == user_db.phone_num:
+                    print(user['phone_num'], user_db.phone_num)
+
+
 class TelegramBot:
     def __init__(self, api_token: str, config=None):
         self.api_token = api_token
@@ -39,11 +92,6 @@ class TelegramBot:
     @property
     def auth_invalid_msg(self) -> str:
         return 'Пройдите идентификацию.\nИспользуйте команду - /start'
-
-    async def raw_send_message(self, chat_id, msg):
-        """Raw api send_message: asyncio.run(raw_send_message())"""
-        async with Bot(self.api_token) as bot:
-            await bot.send_message(chat_id, msg)
 
     async def command_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Инициировать аутентификацию пользователя"""
