@@ -2,3 +2,4 @@ pytest
 pytest-sugar
 python-telegram-bot==20.0a1
 gspread
+supervisor
