@@ -103,7 +103,6 @@ class SenderBot:
         i = 0
         while True:
             try:
-                raise TypeError
                 if not i % 20:
                     gspread_connect_save_users()
                     i = 1
