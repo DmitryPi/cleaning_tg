@@ -142,7 +142,6 @@ class TelegramBot:
         self.config = config if config else load_config()
         self.db = db
         self.db_conn = db_conn
-        self.users = load_json('assets/users.json')
 
     @property
     def auth_invalid_msg(self) -> str:
@@ -189,7 +188,8 @@ class TelegramBot:
         # Проверка длины номера / поиск в пользователях
         if phone_len == num_limit:
             try:
-                user = [user for user in self.users if user['phone_num'] == int(phone)][0]
+                users = load_json('assets/users.json')
+                user = [user for user in users if user['phone_num'] == int(phone)][0]
                 msg = f'Здравствуйте, {user["full_name"]}'
                 await update.message.reply_text(msg)
                 # insert user to db
