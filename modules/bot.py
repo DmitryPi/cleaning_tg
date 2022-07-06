@@ -51,6 +51,7 @@ class SenderBot:
             await bot.send_message(chat_id, msg)
 
     def get_task_jobs(self) -> list[dict]:
+        """Получить задачи или создать пустой файл"""
         try:
             jobs = load_json(self.jobs_path)
         except FileNotFoundError:
@@ -59,6 +60,7 @@ class SenderBot:
         return jobs
 
     def build_task_job(self, user: User, date: str) -> dict:
+        """Создать объект задачи"""
         job = {
             'uid': user.uid,
             'phone_num': user.phone_num,
@@ -68,6 +70,7 @@ class SenderBot:
         return job
 
     def build_task_jobs(self, users: dict, users_db: list[User]) -> list[dict]:
+        """Создать задачи, если юзер в таблице и в базе данных бота"""
         jobs = []
         for user in users:
             date = slice_sheet_dates(user['clean_time'])
@@ -81,12 +84,23 @@ class SenderBot:
         return jobs
 
     def run(self):
+        """Берем пользователей из базы данных и таблицы
+           Создаем новые задачи build_task_jobs
+           Проверяем, если нет задач, добавить новые
+           Проверяем, если задача отправлена(sent),
+             Проверяем текущий день/удаляем из задач
+           Проверяем количество секунд до задачи
+             Если < 0, отправляем сообщение в телеграм
+                Обновляем sent=True
+           Обновляем файл задач
+        """
         while True:
             try:
                 users = load_json('assets/users.json')
                 users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
                 current_tasks = self.get_task_jobs()
                 new_tasks = self.build_task_jobs(users, users_db)
+                # если нет задач, добавить новые задачи
                 if not current_tasks:
                     if new_tasks:
                         update_json_file(new_tasks, file_path=self.jobs_path)
