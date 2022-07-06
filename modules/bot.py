@@ -196,7 +196,7 @@ class TelegramBot:
                 user = [user for user in users if user['phone_num'] == int(phone)][0]
                 msg = f'Здравствуйте, {user["full_name"]}'
                 promo_msg = [
-                    'Мы клининговая компания "Наименование"',
+                    'Мы клининговая компания',
                     'Хотим собрать обратную связь.',
                     'Вы можете посодействовать нам, вызвав команду /review',
                 ]
