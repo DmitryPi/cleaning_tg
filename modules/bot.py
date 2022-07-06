@@ -103,6 +103,7 @@ class SenderBot:
         i = 0
         while True:
             try:
+                raise TypeError
                 if not i % 20:
                     gspread_connect_save_users()
                     i = 1
@@ -136,7 +137,7 @@ class SenderBot:
                 update_json_file(current_tasks, file_path=self.jobs_path)
                 i += 1
             except Exception as e:
-                print(e)
+                handle_error(e, to_file=True)
             sleep(5)
 
 

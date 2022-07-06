@@ -2,6 +2,7 @@ import configparser
 import codecs
 import gspread
 import json
+import traceback
 import re
 
 from datetime import datetime
@@ -40,8 +41,8 @@ def load_config(config_fp='config.ini'):
 def handle_error(error, to_file=False, to_file_path='error_log.txt'):
     """Handle error by writing to file/sending to sentry/raising"""
     if to_file:
-        with open(to_file_path, 'a', encoding='utf-8') as f:
-            f.write(error + '\n')
+        with open(to_file_path, 'w', encoding='utf-8') as f:
+            f.write(str(error) + '\n')
     else:
         raise error
 
