@@ -2,29 +2,45 @@
 > Телеграм бот для клининговой компании
 
 ## Startup
-    Create virtualenv
+    Install virtualenvwrapper
+    export WORKON_HOME=$HOME/.virtualenvs
+    source /usr/local/bin/virtualenvwrapper.sh
+    mkvirtualenv cleaning_tg
+    workon cleaning_tg
     pip install -r requirements.txt
-    pytest
+    pip install supervisor
+    pytest -s
     python main.py
 
-## Features
-- SQLite3
-- Telegram API
-- Pytest
+    # Stop supervisord
+    supervisorctl stop all
+    sudo unlink /tmp/supervisor.sock [or] sudo unlink /var/run/supervisor.sock
+    # Start with supervisord daemon
+    # In project directory run:
+    supervisord
+
 
 ## Composition
     | assets
+        service_account.json
+        task_jobs.json
+        users.json
     | modules
         bot.py
         db.py
+        users.py
         utils.py
         | tests
             test_db.py
+            test_users.py
             test_utils.py
     .editorconfig
     .gitignore
+    config.ini
+    db.sqlite3
     main.py
     requirements.txt
+    supervisord.conf
 
 ## Tests
 ```sh
