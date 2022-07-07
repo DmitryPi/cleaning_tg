@@ -2,7 +2,6 @@ import configparser
 import codecs
 import gspread
 import json
-import traceback
 import re
 
 from datetime import datetime
