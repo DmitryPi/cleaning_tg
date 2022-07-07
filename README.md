@@ -15,6 +15,7 @@
     # Stop supervisord
     supervisorctl stop all
     sudo unlink /tmp/supervisor.sock [or] sudo unlink /var/run/supervisor.sock
+    
     # Start with supervisord daemon
     # In project directory run:
     supervisord
