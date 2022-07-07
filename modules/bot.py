@@ -172,7 +172,7 @@ class TelegramBot:
         except IndexError:
             msg = [
                 'Здравствуйте! На связи клининговая компания «Clean Cases».\n',
-                'Этот бот создан для наших клиентов, здесь вы можете оценить наших сотрудников и качество выполненной уборки.',
+                'Этот бот создан для наших клиентов, здесь вы можете оценить наших сотрудников и качество выполненной услуги.',
                 'Сразу после проведённой уборки, вы можете оценить качество наших услуг по шкале от -2 до 2.\n',
                 'Мы развиваемся и улучшаем качество наших услуг для вас!',
                 'Будем вам очень благодарны за время которое вы посвятите нашему боту, не более 15 сек. в день уборки.\n',
@@ -203,15 +203,12 @@ class TelegramBot:
             try:
                 users = load_json('assets/users.json')
                 user = [user for user in users if user['phone_num'] == int(phone)][0]
-                msg = f'Здравствуйте, {user["full_name"]}'
-                promo_msg = [
-                    'Мы клининговая компания',
-                    'Хотим собрать обратную связь.',
-                    'Вы можете посодействовать нам, вызвав команду /review',
+                msg = [
+                    f'Здравствуйте, {user["full_name"]}\n',
+                    'Вы можете посодействовать нам,\nвызвав команду - /review',
                 ]
-                promo_msg = '\n'.join(promo_msg)
+                msg = '\n'.join(msg)
                 await update.message.reply_text(msg)
-                await update.message.reply_text(promo_msg)
                 # insert user to db
                 user = build_user(user, update.effective_user)
                 self.db.insert_user(self.db_conn, user)
