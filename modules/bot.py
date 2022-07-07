@@ -100,11 +100,12 @@ class SenderBot:
                 Обновляем sent=True
            Обновляем файл задач
         """
+        main_looop_delay = 10
         i = 0
         while True:
             try:
                 if not i % 20:
-                    gspread_connect_save_users()
+                    gspread_connect_save_users()  # update gspread users
                     i = 1
                 users = load_json('assets/users.json')
                 users_db = [User(*user) for user in self.db.get_objects_all(self.db_conn, 'users')]
@@ -126,18 +127,22 @@ class SenderBot:
                     # сколько секунд до задачи
                     until_task = get_datetime_passed_seconds(task['job_at'], reverse=True)
                     if until_task < 0:
-                        print('- Sending message to:', task['uid'])
-                        msg = 'Если вы хотите оставить отзыв.\nВызовите команду - /review'
                         try:
+                            print('- Sending message to:', task['uid'])
+                            msg = [
+                                'Если вы хотите оставить отзыв.',
+                                'Вызовите команду - /review',
+                            ]
+                            msg = '\n'.join(msg)
                             asyncio.run(self.raw_send_message(task['uid'], msg))
                         except BadRequest:
-                            print('- chat not found')
+                            print('- Chat not found')
                         task['sent'] = True
                 update_json_file(current_tasks, file_path=self.jobs_path)
                 i += 1
             except Exception as e:
                 handle_error(e, to_file=True)
-            sleep(5)
+            sleep(main_looop_delay)
 
 
 class TelegramBot:
