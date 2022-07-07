@@ -204,10 +204,16 @@ class TelegramBot:
                 users = load_json('assets/users.json')
                 user = [user for user in users if user['phone_num'] == int(phone)][0]
                 msg = [
-                    f'Здравствуйте, {user["full_name"]}\n',
-                    'Вы можете посодействовать нам,\nвызвав команду - /review',
+                    f'Здравствуйте, {user["full_name"]}',
+                    'Вы можете оценить качество наших услуг по шкале:',
+                    '+2 удивил, сотрудник сделал больше чем от него требуется;',
+                    '+1 хорош, знает свою работу и отлично с ней справляется;',
+                    ' 0 норм, соответсвует занимаемой должности на 80%;',
+                    '-1 кое-как, сотруднику нужна переаттестация;',
+                    '-2 ужасно, необходимо что-то менять;',
+                    'Вызвав команду - /review',
                 ]
-                msg = '\n'.join(msg)
+                msg = '\n\n'.join(msg)
                 await update.message.reply_text(msg)
                 # insert user to db
                 user = build_user(user, update.effective_user)
