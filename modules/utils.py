@@ -111,12 +111,16 @@ def gspread_connect_save_users() -> list[list[str]]:
     users = worksheet.get_all_values()
     json_users = []
     for user in users[1:]:
-        user_adress = user[0]
-        new_user = {
-            'adress': user_adress,
-            'full_name': user[1],
-            'phone_num': int(user[2]),
-            'clean_time': str(user[3]),
-        }
-        json_users.append(new_user)
+        try:
+            user_adress = user[0]
+            new_user = {
+                'adress': user_adress,
+                'full_name': user[1],
+                'phone_num': int(user[2]),
+                'clean_time': str(user[3]),
+            }
+            json_users.append(new_user)
+        except ValueError as e:
+            print('ValueError: gspread_connect_save_users\n', e)
+            continue
     update_json_file(json_users, file_path='assets/users.json')
