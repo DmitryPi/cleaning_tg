@@ -237,12 +237,24 @@ class TelegramBot:
                 '<b>Доступные команды:</b>',
                 '/start - Аутентификацию по номеру телефона',
                 '/help - Вызвать помошник команд',
+                '/unsub - Отписаться от рассылки',
                 '/role - Изменение роли',
                 '/review - Оставить отзыв',
                 '/cancel - Прервать диалог',
             ]
             msg = '\n'.join(msg)
             await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
+        except IndexError:
+            await update.message.reply_text(self.auth_invalid_msg)
+
+    async def command_unsub(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Удалить пользователя из базы данных"""
+        try:
+            user = self.db.get_user(self.db_conn, update.effective_user.id)
+            self.db.delete_object(self.db_conn, 'users', 'uid', user.uid)
+            msg = 'Вы были удалены из базы данных бота.'
+            await update.message.reply_text(msg)
+            return ConversationHandler.END
         except IndexError:
             await update.message.reply_text(self.auth_invalid_msg)
 
@@ -416,6 +428,7 @@ class TelegramBot:
         # on different commands - answer in Telegram
         application.add_handler(start_conv_handler)
         application.add_handler(CommandHandler('help', self.command_help))
+        application.add_handler(CommandHandler('unsub', self.command_unsub))
         application.add_handler(role_conv_handler)
         # application.add_handler(upload_conv_handler)
         application.add_handler(review_conv_handler)
