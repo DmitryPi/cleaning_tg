@@ -256,12 +256,13 @@ class TelegramBot:
             await update.message.reply_text(self.auth_invalid_msg)
 
     async def command_review(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Создать клавиатуру для оценки 1-10"""
+        """Создать клавиатуру для оценки от -2 до +2"""
         try:
             user = self.db.get_user(self.db_conn, update.effective_user.id)
             msg = 'Оцените качество услуги:'
+            score_range = ['-2', '-1', '0', '+1', '+2']
             score_btns = [
-                [InlineKeyboardButton(i, callback_data=i) for i in range(-2, 3)]
+                [InlineKeyboardButton(score, callback_data=score) for score in score_range]
             ]
             reply_keyboard = [score_btns[0]]
             reply_markup = InlineKeyboardMarkup(reply_keyboard)
