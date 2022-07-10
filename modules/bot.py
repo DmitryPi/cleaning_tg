@@ -82,9 +82,6 @@ class SenderBot:
                 continue
             for user_db in users_db:
                 if user['phone_num'] == user_db.phone_num:
-                    user_created = get_datetime_passed_seconds(user_db.created)
-                    if user_created < 1800:  # 30 minutes after user registration
-                        continue
                     job = self.build_task_job(user_db, date)
                     jobs.append(job)
         return jobs
