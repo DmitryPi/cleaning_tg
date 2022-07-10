@@ -23,10 +23,11 @@ class User:
 def build_user(user_data: dict, tg_data: dict, manager=False) -> User:
     """user_data - из json файла; tg_data - объект телеграм пользователя"""
     now = str(datetime.now())
+    username = tg_data['username'] if tg_data['username'] else tg_data['first_name']
     user_role = UserRole.MANAGER.value if manager else UserRole.USER.value
     user = User(
         tg_data['id'],
-        tg_data['username'],
+        username,
         tg_data['first_name'],
         user_data['full_name'],
         user_data['phone_num'],
